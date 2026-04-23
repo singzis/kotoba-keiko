@@ -1,0 +1,25 @@
+# Cargo
+/debug/
+/target/
+
+# rustfmt
+**/*.rs.bk
+
+# Windows (rustc MSVC)
+*.pdb
+
+# 本地练习统计库（README：默认在工作目录生成）
+keiko_stats.db
+*.db-journal
+
+# 环境变量与密钥
+.env
+.env.*
+
+# macOS
+.DS_Store
+
+# 编辑器 / IDE（若要提交共享配置，可删掉对应行）
+.idea/
+*.iml
+.vscode/
