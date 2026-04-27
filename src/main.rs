@@ -1,6 +1,7 @@
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use rand::prelude::IndexedRandom;
 use rusqlite::{Connection, params};
+use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -22,8 +23,29 @@ const GROUP_LAYOUT: &[usize] = &[5, 5, 5, 5, 5, 5, 5, 3, 5, 2, 1];
     about = "平假名与罗马音双向练习器（含 SQLite 统计）"
 )]
 struct Cli {
+    #[command(flatten)]
+    quiz_options: QuizOptions,
     #[command(subcommand)]
     command: Option<Commands>,
+}
+
+#[derive(Args, Clone, Copy, Debug, Default, Eq, PartialEq)]
+struct QuizOptions {
+    /// 在题库中加入促音
+    #[arg(long = "sokuon", global = true)]
+    include_sokuon: bool,
+    /// 在题库中加入浊音
+    #[arg(long = "dakuten", global = true)]
+    include_dakuten: bool,
+    /// 在题库中加入半浊音
+    #[arg(long = "handakuten", global = true)]
+    include_handakuten: bool,
+    /// 在题库中加入拗音
+    #[arg(long = "yoon", global = true)]
+    include_yoon: bool,
+    /// 一次性加入促音、浊音、半浊音、拗音
+    #[arg(long = "all", global = true)]
+    include_all: bool,
 }
 
 #[derive(Subcommand)]
@@ -45,6 +67,14 @@ struct KanaItem {
     hira: &'static str,
     roma: &'static str,
 }
+
+#[derive(Clone, Copy)]
+struct KanaCategory {
+    name: &'static str,
+    items: &'static [KanaItem],
+}
+
+type AnswerStatsMap = HashMap<(String, String), (i64, i64)>;
 
 #[derive(Clone, Copy)]
 enum Direction {
@@ -89,52 +119,544 @@ pub fn group_by_layout<'a, T>(items: &'a [T], layout: &[usize]) -> Vec<&'a [T]> 
 }
 
 const KANA_TABLE: &[KanaItem] = &[
-    KanaItem { hira: "あ", roma: "a" },
-    KanaItem { hira: "い", roma: "i" },
-    KanaItem { hira: "う", roma: "u" },
-    KanaItem { hira: "え", roma: "e" },
-    KanaItem { hira: "お", roma: "o" },
-    KanaItem { hira: "か", roma: "ka" },
-    KanaItem { hira: "き", roma: "ki" },
-    KanaItem { hira: "く", roma: "ku" },
-    KanaItem { hira: "け", roma: "ke" },
-    KanaItem { hira: "こ", roma: "ko" },
-    KanaItem { hira: "さ", roma: "sa" },
-    KanaItem { hira: "し", roma: "shi" },
-    KanaItem { hira: "す", roma: "su" },
-    KanaItem { hira: "せ", roma: "se" },
-    KanaItem { hira: "そ", roma: "so" },
-    KanaItem { hira: "た", roma: "ta" },
-    KanaItem { hira: "ち", roma: "chi" },
-    KanaItem { hira: "つ", roma: "tsu" },
-    KanaItem { hira: "て", roma: "te" },
-    KanaItem { hira: "と", roma: "to" },
-    KanaItem { hira: "な", roma: "na" },
-    KanaItem { hira: "に", roma: "ni" },
-    KanaItem { hira: "ぬ", roma: "nu" },
-    KanaItem { hira: "ね", roma: "ne" },
-    KanaItem { hira: "の", roma: "no" },
-    KanaItem { hira: "は", roma: "ha" },
-    KanaItem { hira: "ひ", roma: "hi" },
-    KanaItem { hira: "ふ", roma: "fu" },
-    KanaItem { hira: "へ", roma: "he" },
-    KanaItem { hira: "ほ", roma: "ho" },
-    KanaItem { hira: "ま", roma: "ma" },
-    KanaItem { hira: "み", roma: "mi" },
-    KanaItem { hira: "む", roma: "mu" },
-    KanaItem { hira: "め", roma: "me" },
-    KanaItem { hira: "も", roma: "mo" },
-    KanaItem { hira: "や", roma: "ya" },
-    KanaItem { hira: "ゆ", roma: "yu" },
-    KanaItem { hira: "よ", roma: "yo" },
-    KanaItem { hira: "ら", roma: "ra" },
-    KanaItem { hira: "り", roma: "ri" },
-    KanaItem { hira: "る", roma: "ru" },
-    KanaItem { hira: "れ", roma: "re" },
-    KanaItem { hira: "ろ", roma: "ro" },
-    KanaItem { hira: "わ", roma: "wa" },
-    KanaItem { hira: "を", roma: "wo" },
-    KanaItem { hira: "ん", roma: "n" },
+    KanaItem {
+        hira: "あ",
+        roma: "a",
+    },
+    KanaItem {
+        hira: "い",
+        roma: "i",
+    },
+    KanaItem {
+        hira: "う",
+        roma: "u",
+    },
+    KanaItem {
+        hira: "え",
+        roma: "e",
+    },
+    KanaItem {
+        hira: "お",
+        roma: "o",
+    },
+    KanaItem {
+        hira: "か",
+        roma: "ka",
+    },
+    KanaItem {
+        hira: "き",
+        roma: "ki",
+    },
+    KanaItem {
+        hira: "く",
+        roma: "ku",
+    },
+    KanaItem {
+        hira: "け",
+        roma: "ke",
+    },
+    KanaItem {
+        hira: "こ",
+        roma: "ko",
+    },
+    KanaItem {
+        hira: "さ",
+        roma: "sa",
+    },
+    KanaItem {
+        hira: "し",
+        roma: "shi",
+    },
+    KanaItem {
+        hira: "す",
+        roma: "su",
+    },
+    KanaItem {
+        hira: "せ",
+        roma: "se",
+    },
+    KanaItem {
+        hira: "そ",
+        roma: "so",
+    },
+    KanaItem {
+        hira: "た",
+        roma: "ta",
+    },
+    KanaItem {
+        hira: "ち",
+        roma: "chi",
+    },
+    KanaItem {
+        hira: "つ",
+        roma: "tsu",
+    },
+    KanaItem {
+        hira: "て",
+        roma: "te",
+    },
+    KanaItem {
+        hira: "と",
+        roma: "to",
+    },
+    KanaItem {
+        hira: "な",
+        roma: "na",
+    },
+    KanaItem {
+        hira: "に",
+        roma: "ni",
+    },
+    KanaItem {
+        hira: "ぬ",
+        roma: "nu",
+    },
+    KanaItem {
+        hira: "ね",
+        roma: "ne",
+    },
+    KanaItem {
+        hira: "の",
+        roma: "no",
+    },
+    KanaItem {
+        hira: "は",
+        roma: "ha",
+    },
+    KanaItem {
+        hira: "ひ",
+        roma: "hi",
+    },
+    KanaItem {
+        hira: "ふ",
+        roma: "fu",
+    },
+    KanaItem {
+        hira: "へ",
+        roma: "he",
+    },
+    KanaItem {
+        hira: "ほ",
+        roma: "ho",
+    },
+    KanaItem {
+        hira: "ま",
+        roma: "ma",
+    },
+    KanaItem {
+        hira: "み",
+        roma: "mi",
+    },
+    KanaItem {
+        hira: "む",
+        roma: "mu",
+    },
+    KanaItem {
+        hira: "め",
+        roma: "me",
+    },
+    KanaItem {
+        hira: "も",
+        roma: "mo",
+    },
+    KanaItem {
+        hira: "や",
+        roma: "ya",
+    },
+    KanaItem {
+        hira: "ゆ",
+        roma: "yu",
+    },
+    KanaItem {
+        hira: "よ",
+        roma: "yo",
+    },
+    KanaItem {
+        hira: "ら",
+        roma: "ra",
+    },
+    KanaItem {
+        hira: "り",
+        roma: "ri",
+    },
+    KanaItem {
+        hira: "る",
+        roma: "ru",
+    },
+    KanaItem {
+        hira: "れ",
+        roma: "re",
+    },
+    KanaItem {
+        hira: "ろ",
+        roma: "ro",
+    },
+    KanaItem {
+        hira: "わ",
+        roma: "wa",
+    },
+    KanaItem {
+        hira: "を",
+        roma: "wo",
+    },
+    KanaItem {
+        hira: "ん",
+        roma: "n",
+    },
+];
+
+const DAKUON_TABLE: &[KanaItem] = &[
+    KanaItem {
+        hira: "が",
+        roma: "ga",
+    },
+    KanaItem {
+        hira: "ぎ",
+        roma: "gi",
+    },
+    KanaItem {
+        hira: "ぐ",
+        roma: "gu",
+    },
+    KanaItem {
+        hira: "げ",
+        roma: "ge",
+    },
+    KanaItem {
+        hira: "ご",
+        roma: "go",
+    },
+    KanaItem {
+        hira: "ざ",
+        roma: "za",
+    },
+    KanaItem {
+        hira: "じ",
+        roma: "ji",
+    },
+    KanaItem {
+        hira: "ず",
+        roma: "zu",
+    },
+    KanaItem {
+        hira: "ぜ",
+        roma: "ze",
+    },
+    KanaItem {
+        hira: "ぞ",
+        roma: "zo",
+    },
+    KanaItem {
+        hira: "だ",
+        roma: "da",
+    },
+    KanaItem {
+        hira: "ぢ",
+        roma: "di",
+    },
+    KanaItem {
+        hira: "づ",
+        roma: "du",
+    },
+    KanaItem {
+        hira: "で",
+        roma: "de",
+    },
+    KanaItem {
+        hira: "ど",
+        roma: "do",
+    },
+    KanaItem {
+        hira: "ば",
+        roma: "ba",
+    },
+    KanaItem {
+        hira: "び",
+        roma: "bi",
+    },
+    KanaItem {
+        hira: "ぶ",
+        roma: "bu",
+    },
+    KanaItem {
+        hira: "べ",
+        roma: "be",
+    },
+    KanaItem {
+        hira: "ぼ",
+        roma: "bo",
+    },
+];
+
+const HANDAKUON_TABLE: &[KanaItem] = &[
+    KanaItem {
+        hira: "ぱ",
+        roma: "pa",
+    },
+    KanaItem {
+        hira: "ぴ",
+        roma: "pi",
+    },
+    KanaItem {
+        hira: "ぷ",
+        roma: "pu",
+    },
+    KanaItem {
+        hira: "ぺ",
+        roma: "pe",
+    },
+    KanaItem {
+        hira: "ぽ",
+        roma: "po",
+    },
+];
+
+const SOKUON_TABLE: &[KanaItem] = &[
+    KanaItem {
+        hira: "っか",
+        roma: "kka",
+    },
+    KanaItem {
+        hira: "っき",
+        roma: "kki",
+    },
+    KanaItem {
+        hira: "っく",
+        roma: "kku",
+    },
+    KanaItem {
+        hira: "っけ",
+        roma: "kke",
+    },
+    KanaItem {
+        hira: "っこ",
+        roma: "kko",
+    },
+    KanaItem {
+        hira: "っさ",
+        roma: "ssa",
+    },
+    KanaItem {
+        hira: "っし",
+        roma: "sshi",
+    },
+    KanaItem {
+        hira: "っす",
+        roma: "ssu",
+    },
+    KanaItem {
+        hira: "っせ",
+        roma: "sse",
+    },
+    KanaItem {
+        hira: "っそ",
+        roma: "sso",
+    },
+    KanaItem {
+        hira: "った",
+        roma: "tta",
+    },
+    KanaItem {
+        hira: "っち",
+        roma: "cchi",
+    },
+    KanaItem {
+        hira: "っつ",
+        roma: "ttsu",
+    },
+    KanaItem {
+        hira: "って",
+        roma: "tte",
+    },
+    KanaItem {
+        hira: "っと",
+        roma: "tto",
+    },
+    KanaItem {
+        hira: "っぱ",
+        roma: "ppa",
+    },
+    KanaItem {
+        hira: "っぴ",
+        roma: "ppi",
+    },
+    KanaItem {
+        hira: "っぷ",
+        roma: "ppu",
+    },
+    KanaItem {
+        hira: "っぺ",
+        roma: "ppe",
+    },
+    KanaItem {
+        hira: "っぽ",
+        roma: "ppo",
+    },
+];
+
+const YOON_TABLE: &[KanaItem] = &[
+    KanaItem {
+        hira: "きゃ",
+        roma: "kya",
+    },
+    KanaItem {
+        hira: "きゅ",
+        roma: "kyu",
+    },
+    KanaItem {
+        hira: "きょ",
+        roma: "kyo",
+    },
+    KanaItem {
+        hira: "しゃ",
+        roma: "sha",
+    },
+    KanaItem {
+        hira: "しゅ",
+        roma: "shu",
+    },
+    KanaItem {
+        hira: "しょ",
+        roma: "sho",
+    },
+    KanaItem {
+        hira: "ちゃ",
+        roma: "cha",
+    },
+    KanaItem {
+        hira: "ちゅ",
+        roma: "chu",
+    },
+    KanaItem {
+        hira: "ちょ",
+        roma: "cho",
+    },
+    KanaItem {
+        hira: "にゃ",
+        roma: "nya",
+    },
+    KanaItem {
+        hira: "にゅ",
+        roma: "nyu",
+    },
+    KanaItem {
+        hira: "にょ",
+        roma: "nyo",
+    },
+    KanaItem {
+        hira: "ひゃ",
+        roma: "hya",
+    },
+    KanaItem {
+        hira: "ひゅ",
+        roma: "hyu",
+    },
+    KanaItem {
+        hira: "ひょ",
+        roma: "hyo",
+    },
+    KanaItem {
+        hira: "みゃ",
+        roma: "mya",
+    },
+    KanaItem {
+        hira: "みゅ",
+        roma: "myu",
+    },
+    KanaItem {
+        hira: "みょ",
+        roma: "myo",
+    },
+    KanaItem {
+        hira: "りゃ",
+        roma: "rya",
+    },
+    KanaItem {
+        hira: "りゅ",
+        roma: "ryu",
+    },
+    KanaItem {
+        hira: "りょ",
+        roma: "ryo",
+    },
+];
+
+const EXTENDED_YOON_TABLE: &[KanaItem] = &[
+    KanaItem {
+        hira: "ぎゃ",
+        roma: "gya",
+    },
+    KanaItem {
+        hira: "ぎゅ",
+        roma: "gyu",
+    },
+    KanaItem {
+        hira: "ぎょ",
+        roma: "gyo",
+    },
+    KanaItem {
+        hira: "じゃ",
+        roma: "ja",
+    },
+    KanaItem {
+        hira: "じゅ",
+        roma: "ju",
+    },
+    KanaItem {
+        hira: "じょ",
+        roma: "jo",
+    },
+    KanaItem {
+        hira: "びゃ",
+        roma: "bya",
+    },
+    KanaItem {
+        hira: "びゅ",
+        roma: "byu",
+    },
+    KanaItem {
+        hira: "びょ",
+        roma: "byo",
+    },
+    KanaItem {
+        hira: "ぴゃ",
+        roma: "pya",
+    },
+    KanaItem {
+        hira: "ぴゅ",
+        roma: "pyu",
+    },
+    KanaItem {
+        hira: "ぴょ",
+        roma: "pyo",
+    },
+];
+
+const KANA_CATEGORIES: &[KanaCategory] = &[
+    KanaCategory {
+        name: "清音",
+        items: KANA_TABLE,
+    },
+    KanaCategory {
+        name: "浊音",
+        items: DAKUON_TABLE,
+    },
+    KanaCategory {
+        name: "半浊音",
+        items: HANDAKUON_TABLE,
+    },
+    KanaCategory {
+        name: "促音",
+        items: SOKUON_TABLE,
+    },
+    KanaCategory {
+        name: "拗音",
+        items: YOON_TABLE,
+    },
+    KanaCategory {
+        name: "拗音（浊/半浊）",
+        items: EXTENDED_YOON_TABLE,
+    },
 ];
 
 fn main() {
@@ -146,14 +668,17 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let cli = Cli::parse();
-    match cli.command.unwrap_or(Commands::Quiz) {
+    let command = cli.command.unwrap_or(Commands::Quiz);
+    validate_quiz_options(&command, cli.quiz_options)?;
+
+    match command {
         Commands::Review => {
-            print_kana_chart();
+            print_kana_chart(cli.quiz_options);
             Ok(())
         }
         Commands::Quiz => {
             let conn = open_db()?;
-            run_quiz(&conn)
+            run_quiz(&conn, cli.quiz_options)
         }
         Commands::Stats => {
             let conn = open_db()?;
@@ -165,6 +690,38 @@ fn run() -> Result<(), String> {
             show_detail(&conn)
         }
     }
+}
+
+fn validate_quiz_options(command: &Commands, quiz_options: QuizOptions) -> Result<(), String> {
+    if (quiz_options.include_sokuon
+        || quiz_options.include_dakuten
+        || quiz_options.include_handakuten
+        || quiz_options.include_yoon
+        || quiz_options.include_all)
+        && !matches!(command, Commands::Quiz | Commands::Review)
+    {
+        return Err(
+            "`--sokuon`、`--dakuten`、`--handakuten`、`--yoon`、`--all` 仅可与 `quiz` 或 `review` 一起使用"
+                .to_string(),
+        );
+    }
+    Ok(())
+}
+
+fn include_sokuon(options: QuizOptions) -> bool {
+    options.include_all || options.include_sokuon
+}
+
+fn include_dakuten(options: QuizOptions) -> bool {
+    options.include_all || options.include_dakuten
+}
+
+fn include_handakuten(options: QuizOptions) -> bool {
+    options.include_all || options.include_handakuten
+}
+
+fn include_yoon(options: QuizOptions) -> bool {
+    options.include_all || options.include_yoon
 }
 
 fn reset_db() -> Result<(), String> {
@@ -217,20 +774,89 @@ fn open_db() -> Result<Connection, String> {
     Ok(conn)
 }
 
+fn build_quiz_pool(quiz_options: QuizOptions) -> Vec<&'static KanaItem> {
+    let mut pool: Vec<&KanaItem> = KANA_TABLE.iter().collect();
+
+    if include_dakuten(quiz_options) {
+        pool.extend(DAKUON_TABLE.iter());
+    }
+
+    if include_handakuten(quiz_options) {
+        pool.extend(HANDAKUON_TABLE.iter());
+    }
+
+    if include_sokuon(quiz_options) {
+        pool.extend(SOKUON_TABLE.iter());
+    }
+
+    if include_yoon(quiz_options) {
+        pool.extend(YOON_TABLE.iter());
+        if include_dakuten(quiz_options) || include_handakuten(quiz_options) {
+            pool.extend(EXTENDED_YOON_TABLE.iter());
+        }
+    }
+
+    pool
+}
+
+fn selected_feature_labels(quiz_options: QuizOptions) -> Vec<&'static str> {
+    let mut labels = Vec::new();
+    if include_sokuon(quiz_options) {
+        labels.push("促音");
+    }
+    if include_dakuten(quiz_options) {
+        labels.push("浊音");
+    }
+    if include_handakuten(quiz_options) {
+        labels.push("半浊音");
+    }
+    if include_yoon(quiz_options) {
+        labels.push(
+            if include_dakuten(quiz_options) || include_handakuten(quiz_options) {
+                "拗音（含浊/半浊拗音）"
+            } else {
+                "拗音"
+            },
+        );
+    }
+    labels
+}
+
+fn print_group(name: &str, items: &[KanaItem]) {
+    println!("\n【{name}】");
+    for item in items {
+        print!("{:>3} ({:<5}) ", item.hira, item.roma);
+    }
+    println!();
+}
+
 /// Prints the complete kana chart grouped by standard Japanese order.
-/// Groups are: a,o,k,s,t,n,h,m,y,r,w,n corresponding to vowel, ka, sa, ta, na, ha, ma, ya, ra, wa rows plus n.
-fn print_kana_chart() {
+/// Groups are: a,k,s,t,n,h,m,y,r,w,n corresponding to vowel, ka, sa, ta, na, ha, ma, ya, ra, wa rows plus n.
+fn print_kana_chart(quiz_options: QuizOptions) {
     println!("平假名 ↔ 罗马音（练习用全表）");
     println!("{}", "—".repeat(48));
 
     let groups = group_by_layout(KANA_TABLE, GROUP_LAYOUT);
     for group in groups {
         let group_name = group.first().unwrap().roma.chars().next().unwrap();
-        println!("\n【{}】", group_name.to_uppercase());
-        for item in group {
-            print!("{:>3} ({:<3}) ", item.hira, item.roma);
+        print_group(&group_name.to_uppercase().to_string(), group);
+    }
+
+    if include_dakuten(quiz_options) {
+        print_group("浊音", DAKUON_TABLE);
+    }
+    if include_handakuten(quiz_options) {
+        print_group("半浊音", HANDAKUON_TABLE);
+    }
+    if include_sokuon(quiz_options) {
+        print_group("促音", SOKUON_TABLE);
+    }
+
+    if include_yoon(quiz_options) {
+        print_group("拗音", YOON_TABLE);
+        if include_dakuten(quiz_options) || include_handakuten(quiz_options) {
+            print_group("拗音（浊/半浊）", EXTENDED_YOON_TABLE);
         }
-        println!();
     }
 }
 
@@ -265,18 +891,24 @@ fn init_db(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
-fn run_quiz(conn: &Connection) -> Result<(), String> {
+fn run_quiz(conn: &Connection, quiz_options: QuizOptions) -> Result<(), String> {
     println!("开始练习：随机给出平假名或罗马音，请输入对应答案。");
+    let feature_labels = selected_feature_labels(quiz_options);
+    if !feature_labels.is_empty() {
+        println!("已启用题型：{}", feature_labels.join("；"));
+    }
     println!("{EXIT_HINT}");
 
     let mut rng = rand::rng();
     let mut total = 0_i64;
     let mut correct = 0_i64;
     let mut answers: Vec<(&KanaItem, bool)> = Vec::new();
+    let pool = build_quiz_pool(quiz_options);
 
     loop {
-        let item = KANA_TABLE
+        let item = pool
             .choose(&mut rng)
+            .copied()
             .ok_or_else(|| "题库为空".to_string())?;
         let direction = if rand::random::<bool>() {
             Direction::HiraToRoma
@@ -322,7 +954,10 @@ fn run_quiz(conn: &Connection) -> Result<(), String> {
             correct += 1;
             println!("{COLOR_GREEN}正确{COLOR_RESET}");
         } else {
-            println!("{COLOR_RED}错误，正确答案：{} / {}{COLOR_RESET}", item.hira, item.roma);
+            println!(
+                "{COLOR_RED}错误，正确答案：{} / {}{COLOR_RESET}",
+                item.hira, item.roma
+            );
         }
         answers.push((item, ok));
     }
@@ -342,12 +977,19 @@ fn run_quiz(conn: &Connection) -> Result<(), String> {
 
         // 保存每题的答案记录
         let mut stmt = conn
-            .prepare("INSERT INTO answers (session_id, hira, roma, correct) VALUES (?1, ?2, ?3, ?4)")
+            .prepare(
+                "INSERT INTO answers (session_id, hira, roma, correct) VALUES (?1, ?2, ?3, ?4)",
+            )
             .map_err(|e| format!("准备语句失败：{e}"))?;
         let session_id = conn.last_insert_rowid();
         for (item, ok) in answers {
-            stmt.execute(params![session_id, item.hira, item.roma, if ok { 1 } else { 0 }])
-                .map_err(|e| format!("保存答案失败：{e}"))?;
+            stmt.execute(params![
+                session_id,
+                item.hira,
+                item.roma,
+                if ok { 1 } else { 0 }
+            ])
+            .map_err(|e| format!("保存答案失败：{e}"))?;
         }
     } else {
         println!("本轮未作答，不记录数据。");
@@ -388,6 +1030,21 @@ fn show_stats(conn: &Connection) -> Result<(), String> {
     println!("累计错误：{incorrect}");
     println!("累计成功率：{accuracy:.2}%");
     println!("累计失败率：{fail_rate:.2}%");
+
+    let stats_map = load_answer_stats_map(conn)?;
+    let category_stats = build_category_stats(&stats_map);
+    if !category_stats.is_empty() {
+        println!("\n类别汇总:");
+        for (name, correct_count, total) in category_stats {
+            let accuracy = correct_count as f64 / total as f64 * 100.0;
+            let bar_len = (accuracy / 10.0) as usize;
+            let bar = "#".repeat(bar_len) + &"-".repeat(10 - bar_len);
+            println!(
+                "  {:<12} [{}] {:5.1}% ({}/{})",
+                name, bar, accuracy, correct_count, total
+            );
+        }
+    }
 
     println!("\n最近 5 次会话:");
     let mut recent = conn
@@ -435,6 +1092,67 @@ fn show_stats(conn: &Connection) -> Result<(), String> {
 
 /// Shows detailed accuracy statistics for each kana item grouped by standard order.
 fn show_detail(conn: &Connection) -> Result<(), String> {
+    let stats_map = load_answer_stats_map(conn)?;
+    if stats_map.is_empty() {
+        println!("暂无详细数据，先运行 keiko 或 keiko quiz 开始练习。");
+        return Ok(());
+    }
+
+    // Use the same layout-based grouping as print_kana_chart
+    let groups = group_by_layout(KANA_TABLE, GROUP_LAYOUT);
+
+    println!("类别汇总:\n");
+    for (name, correct_count, total) in build_category_stats(&stats_map) {
+        let accuracy = correct_count as f64 / total as f64 * 100.0;
+        let bar_len = (accuracy / 10.0) as usize;
+        let bar = "#".repeat(bar_len) + &"-".repeat(10 - bar_len);
+        println!(
+            "  {:<12} [{}] {:5.1}% ({}/{})",
+            name, bar, accuracy, correct_count, total
+        );
+    }
+
+    println!("\n各字正确率统计:\n");
+    for group in groups {
+        let group_name = group.first().unwrap().roma.chars().next().unwrap();
+        print_detail_group(&group_name.to_uppercase().to_string(), group, &stats_map);
+    }
+
+    print_detail_group("浊音", DAKUON_TABLE, &stats_map);
+    print_detail_group("半浊音", HANDAKUON_TABLE, &stats_map);
+    print_detail_group("促音", SOKUON_TABLE, &stats_map);
+    print_detail_group("拗音", YOON_TABLE, &stats_map);
+    print_detail_group("拗音（浊/半浊）", EXTENDED_YOON_TABLE, &stats_map);
+
+    Ok(())
+}
+
+fn build_category_stats(stats_map: &AnswerStatsMap) -> Vec<(&'static str, i64, i64)> {
+    KANA_CATEGORIES
+        .iter()
+        .filter_map(|category| {
+            let mut correct_sum = 0_i64;
+            let mut total_sum = 0_i64;
+
+            for item in category.items {
+                if let Some(&(correct_count, total)) =
+                    stats_map.get(&(item.hira.to_string(), item.roma.to_string()))
+                {
+                    correct_sum += correct_count;
+                    total_sum += total;
+                }
+            }
+
+            if total_sum > 0 {
+                Some((category.name, correct_sum, total_sum))
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+fn load_answer_stats_map(conn: &Connection) -> Result<AnswerStatsMap, String> {
     let mut stmt = conn
         .prepare(
             "SELECT hira, roma, SUM(correct) AS correct_count, COUNT(*) AS total
@@ -442,7 +1160,7 @@ fn show_detail(conn: &Connection) -> Result<(), String> {
              GROUP BY hira, roma
              ORDER BY ROWID",
         )
-        .map_err(|e| format!("读取详情失败：{e}"))?;
+        .map_err(|e| format!("读取答案统计失败：{e}"))?;
 
     let rows = stmt
         .query_map([], |row| {
@@ -450,50 +1168,170 @@ fn show_detail(conn: &Connection) -> Result<(), String> {
             let roma: String = row.get(1)?;
             let correct_count: i64 = row.get(2)?;
             let total: i64 = row.get(3)?;
-            Ok((hira, roma, correct_count, total))
+            Ok(((hira, roma), (correct_count, total)))
         })
-        .map_err(|e| format!("查询详情失败：{e}"))?;
+        .map_err(|e| format!("查询答案统计失败：{e}"))?;
 
-    let data: Vec<_> = rows
-        .filter_map(|r| r.ok())
-        .collect();
-
-    if data.is_empty() {
-        println!("暂无详细数据，先运行 keiko 或 keiko quiz 开始练习。");
-        return Ok(());
+    let mut stats_map = AnswerStatsMap::new();
+    for row in rows {
+        let ((hira, roma), stats) = row.map_err(|e| format!("解析答案统计失败：{e}"))?;
+        stats_map.insert((hira, roma), stats);
     }
 
-    // Build lookup from (hira, roma) to stats
-    let mut stats_map: std::collections::HashMap<(String, String), (i64, i64)> =
-        std::collections::HashMap::new();
-    for (hira, roma, correct_count, total) in &data {
-        stats_map.insert((hira.clone(), roma.clone()), (*correct_count, *total));
-    }
+    Ok(stats_map)
+}
 
-    // Use the same layout-based grouping as print_kana_chart
-    let groups = group_by_layout(KANA_TABLE, GROUP_LAYOUT);
+fn print_detail_group(group_name: &str, items: &[KanaItem], stats_map: &AnswerStatsMap) {
+    let mut printed = false;
 
-    println!("各字正确率统计:\n");
-    for group in groups {
-        let group_name = group.first().unwrap().roma.chars().next().unwrap();
-        println!("[{}]", group_name.to_uppercase());
-        for item in group {
-            if let Some(&(correct_count, total)) = stats_map.get(&(item.hira.to_string(), item.roma.to_string())) {
-                let accuracy = correct_count as f64 / total as f64 * 100.0;
-                let bar_len = (accuracy / 10.0) as usize;
-                let bar = "#".repeat(bar_len) + &"-".repeat(10 - bar_len);
-                println!(
-                    "  {} ({:>4}): [{}] {:5.1}% ({}/{})",
-                    item.hira, item.roma, bar, accuracy, correct_count, total
-                );
+    for item in items {
+        if let Some(&(correct_count, total)) =
+            stats_map.get(&(item.hira.to_string(), item.roma.to_string()))
+        {
+            if !printed {
+                println!("[{group_name}]");
+                printed = true;
             }
+            let accuracy = correct_count as f64 / total as f64 * 100.0;
+            let bar_len = (accuracy / 10.0) as usize;
+            let bar = "#".repeat(bar_len) + &"-".repeat(10 - bar_len);
+            println!(
+                "  {} ({:>5}): [{}] {:5.1}% ({}/{})",
+                item.hira, item.roma, bar, accuracy, correct_count, total
+            );
         }
+    }
+
+    if printed {
         println!();
     }
-
-    Ok(())
 }
 
 fn is_exit(s: &str) -> bool {
     matches!(s.to_ascii_lowercase().as_str(), "q" | "quit" | "exit")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn contains_item(items: &[&KanaItem], hira: &str, roma: &str) -> bool {
+        items
+            .iter()
+            .any(|item| item.hira == hira && item.roma == roma)
+    }
+
+    fn build_stats_map(entries: &[(&str, &str, i64, i64)]) -> AnswerStatsMap {
+        entries
+            .iter()
+            .map(|(hira, roma, correct_count, total)| {
+                (
+                    ((*hira).to_string(), (*roma).to_string()),
+                    (*correct_count, *total),
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn default_pool_contains_only_base_kana() {
+        let pool = build_quiz_pool(QuizOptions::default());
+
+        assert_eq!(pool.len(), 46);
+        assert!(contains_item(&pool, "あ", "a"));
+        assert!(!contains_item(&pool, "が", "ga"));
+        assert!(!contains_item(&pool, "っか", "kka"));
+        assert!(!contains_item(&pool, "きゃ", "kya"));
+    }
+
+    #[test]
+    fn split_flags_add_requested_groups() {
+        let pool = build_quiz_pool(QuizOptions {
+            include_sokuon: true,
+            include_dakuten: true,
+            include_handakuten: true,
+            include_yoon: false,
+            include_all: false,
+        });
+
+        assert!(contains_item(&pool, "が", "ga"));
+        assert!(contains_item(&pool, "ぱ", "pa"));
+        assert!(contains_item(&pool, "っか", "kka"));
+        assert!(!contains_item(&pool, "きゃ", "kya"));
+        assert!(!contains_item(&pool, "ぎゃ", "gya"));
+    }
+
+    #[test]
+    fn yoon_pool_adds_base_yoon_only() {
+        let pool = build_quiz_pool(QuizOptions {
+            include_sokuon: false,
+            include_dakuten: false,
+            include_handakuten: false,
+            include_yoon: true,
+            include_all: false,
+        });
+
+        assert!(contains_item(&pool, "きゃ", "kya"));
+        assert!(contains_item(&pool, "しゅ", "shu"));
+        assert!(!contains_item(&pool, "が", "ga"));
+        assert!(!contains_item(&pool, "ぎゃ", "gya"));
+    }
+
+    #[test]
+    fn combined_pool_adds_extended_yoon_too() {
+        let pool = build_quiz_pool(QuizOptions {
+            include_sokuon: true,
+            include_dakuten: true,
+            include_handakuten: true,
+            include_yoon: true,
+            include_all: false,
+        });
+
+        assert!(contains_item(&pool, "が", "ga"));
+        assert!(contains_item(&pool, "っち", "cchi"));
+        assert!(contains_item(&pool, "きょ", "kyo"));
+        assert!(contains_item(&pool, "ぎゃ", "gya"));
+        assert!(contains_item(&pool, "ぴょ", "pyo"));
+    }
+
+    #[test]
+    fn all_flag_enables_everything() {
+        let pool = build_quiz_pool(QuizOptions {
+            include_sokuon: false,
+            include_dakuten: false,
+            include_handakuten: false,
+            include_yoon: false,
+            include_all: true,
+        });
+
+        assert!(contains_item(&pool, "っち", "cchi"));
+        assert!(contains_item(&pool, "が", "ga"));
+        assert!(contains_item(&pool, "ぽ", "po"));
+        assert!(contains_item(&pool, "きゅ", "kyu"));
+        assert!(contains_item(&pool, "びょ", "byo"));
+    }
+
+    #[test]
+    fn category_stats_are_grouped_by_kana_type() {
+        let stats_map = build_stats_map(&[
+            ("あ", "a", 2, 3),
+            ("が", "ga", 1, 2),
+            ("ぱ", "pa", 3, 4),
+            ("っか", "kka", 1, 1),
+            ("きゃ", "kya", 2, 2),
+            ("ぎゃ", "gya", 1, 3),
+        ]);
+
+        assert_eq!(
+            build_category_stats(&stats_map),
+            vec![
+                ("清音", 2, 3),
+                ("浊音", 1, 2),
+                ("半浊音", 3, 4),
+                ("促音", 1, 1),
+                ("拗音", 2, 2),
+                ("拗音（浊/半浊）", 1, 3),
+            ]
+        );
+    }
 }
