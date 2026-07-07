@@ -2,7 +2,7 @@
 
 [中文](README.md) | [日本語](README.ja.md)
 
-终端里的**平假名 ↔ 罗马音**双向小测验：随机出题、记录对错，统计写入本地 **SQLite**。
+终端里的**假名 ↔ 罗马音**双向小测验：默认练习平假名，也可切到片假名；随机出题、记录对错，统计写入本地 **SQLite**。
 
 - **kotoba**（言葉）：词语、语言。  
 - **keiko**（稽古）：练习、修习。  
@@ -24,13 +24,29 @@ cargo run -- quiz --handakuten
 cargo run -- quiz --yoon
 cargo run -- quiz --all
 cargo run -- quiz --dakuten --yoon
+cargo run -- quiz --katakana
+cargo run -- quiz --katakana --dakuten
 ```
+
+## 可视化预览
+
+```bash
+cargo run --bin stats-viewer
+```
+
+启动后打开 `http://127.0.0.1:7878`。页面会动态读取与 CLI 相同位置的 `$HOME/.keiko_stats.db`。
 
 安装到本机 `PATH` 后可直接敲 `keiko`：
 
 ```bash
-cargo install --path .
+cargo install --path . --bin keiko
 keiko quiz
+```
+
+注意：`cargo run` 会使用当前源码；终端里的 `keiko` 是已安装的独立二进制。源码更新后若要让 `keiko` 命令使用新逻辑，需要重新安装：
+
+```bash
+cargo install --path . --bin keiko --force
 ```
 
 ## 子命令
@@ -38,19 +54,20 @@ keiko quiz
 
 | 命令                     | 说明                                                |
 | ---------------------- | ------------------------------------------------- |
-| `keiko` / `keiko quiz` | 开始练习；随机给出**平假名**或**罗马音**，输入对应答案。                  |
+| `keiko` / `keiko quiz` | 开始练习；随机给出**假名**或**罗马音**，输入对应答案。                   |
 | `keiko stats`          | 查看累计统计与最近若干次会话。                                   |
-| `keiko review`         | 打印题库内全部平假名与罗马音对照表（不访问数据库）。                        |
+| `keiko review`         | 打印题库内全部假名与罗马音对照表（不访问数据库）。                         |
 | `keiko reset`          | 清空统计：删除用户主目录下的 `~/.keiko_stats.db`（需两次交互确认，防止误删）。 |
 
 ## 可选参数
 
 - `--sokuon`：在 `quiz` / `review` 中加入**促音**。
+- `--katakana`：使用**片假名**题库；不加时默认使用平假名。
 - `--dakuten`：在 `quiz` / `review` 中加入**浊音**。
 - `--handakuten`：在 `quiz` / `review` 中加入**半浊音**。
 - `--yoon`：在 `quiz` / `review` 中加入**拗音**。
 - `--all`：一次性加入**促音、浊音、半浊音、拗音**。
-- 这些参数都可组合使用；例如 `--dakuten --yoon` 会加入浊音与拗音，并额外包含浊拗音；`--all` 则等价于全部开启。
+- 这些参数都可组合使用；例如 `--dakuten --yoon` 会加入浊音与拗音，并额外包含浊拗音；`--katakana --dakuten` 会练习片假名浊音；`--all` 则等价于全部开启。
 
 
 退出练习：输入 `**q`**、`**quit**` 或 `**exit**` 后结束本轮；若本轮有作答，会写入数据库。

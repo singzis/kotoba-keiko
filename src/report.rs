@@ -1,6 +1,9 @@
 use crate::kana::{
     DAKUON_TABLE, EXTENDED_YOON_TABLE, GROUP_LAYOUT, HANDAKUON_TABLE, KANA_CATEGORIES, KANA_TABLE,
-    SOKUON_TABLE, YOON_TABLE, group_by_layout,
+    KATAKANA_DAKUON_TABLE, KATAKANA_EXTENDED_YOON_TABLE, KATAKANA_HANDAKUON_TABLE,
+    KATAKANA_SOKUON_TABLE, KATAKANA_TABLE, KATAKANA_YOON_TABLE, SOKUON_TABLE, YOON_TABLE,
+    base_table, dakuten_table, extended_yoon_table, group_by_layout, handakuten_table,
+    sokuon_table, yoon_table,
 };
 use crate::model::{AnswerStatsMap, AppResult, KanaItem, QuizOptions};
 use crate::storage::load_answer_stats_map;
@@ -13,29 +16,34 @@ use std::fmt::Write as _;
 /// 而 `kana` 模块只提供底层数据。
 pub fn render_kana_chart(options: QuizOptions) -> String {
     let mut output = String::new();
-    writeln!(output, "平假名 ↔ 罗马音（练习用全表）").unwrap();
+    let script_name = if options.uses_katakana() {
+        "片假名"
+    } else {
+        "平假名"
+    };
+    writeln!(output, "{script_name} ↔ 罗马音（练习用全表）").unwrap();
     writeln!(output, "{}", "—".repeat(48)).unwrap();
 
-    let groups = group_by_layout(KANA_TABLE, GROUP_LAYOUT);
+    let groups = group_by_layout(base_table(options), GROUP_LAYOUT);
     for group in groups {
         let group_name = group.first().unwrap().roma.chars().next().unwrap();
         write_group(&mut output, &group_name.to_uppercase().to_string(), group);
     }
 
     if options.includes_dakuten() {
-        write_group(&mut output, "浊音", DAKUON_TABLE);
+        write_group(&mut output, "浊音", dakuten_table(options));
     }
     if options.includes_handakuten() {
-        write_group(&mut output, "半浊音", HANDAKUON_TABLE);
+        write_group(&mut output, "半浊音", handakuten_table(options));
     }
     if options.includes_sokuon() {
-        write_group(&mut output, "促音", SOKUON_TABLE);
+        write_group(&mut output, "促音", sokuon_table(options));
     }
     if options.includes_yoon() {
-        write_group(&mut output, "拗音", YOON_TABLE);
+        write_group(&mut output, "拗音", yoon_table(options));
     }
     if options.includes_extended_yoon() {
-        write_group(&mut output, "拗音（浊/半浊）", EXTENDED_YOON_TABLE);
+        write_group(&mut output, "拗音（浊/半浊）", extended_yoon_table(options));
     }
 
     output
@@ -183,6 +191,30 @@ pub fn render_detail(conn: &Connection) -> AppResult<String> {
         EXTENDED_YOON_TABLE,
         &stats_map,
     );
+    for group in group_by_layout(KATAKANA_TABLE, GROUP_LAYOUT) {
+        let group_name = group.first().unwrap().roma.chars().next().unwrap();
+        write_detail_group(
+            &mut output,
+            &format!("片假名{}", group_name.to_uppercase()),
+            group,
+            &stats_map,
+        );
+    }
+    write_detail_group(&mut output, "片假名浊音", KATAKANA_DAKUON_TABLE, &stats_map);
+    write_detail_group(
+        &mut output,
+        "片假名半浊音",
+        KATAKANA_HANDAKUON_TABLE,
+        &stats_map,
+    );
+    write_detail_group(&mut output, "片假名促音", KATAKANA_SOKUON_TABLE, &stats_map);
+    write_detail_group(&mut output, "片假名拗音", KATAKANA_YOON_TABLE, &stats_map);
+    write_detail_group(
+        &mut output,
+        "片假名拗音（浊/半浊）",
+        KATAKANA_EXTENDED_YOON_TABLE,
+        &stats_map,
+    );
 
     Ok(output)
 }
@@ -297,5 +329,47 @@ mod tests {
                 ("拗音（浊/半浊）", 1, 3),
             ]
         );
+    }
+
+    #[test]
+    fn category_stats_are_grouped_by_katakana_type() {
+        let stats_map = build_stats_map(&[
+            ("ア", "a", 2, 3),
+            ("ガ", "ga", 1, 2),
+            ("パ", "pa", 3, 4),
+            ("ッカ", "kka", 1, 1),
+            ("キャ", "kya", 2, 2),
+            ("ギャ", "gya", 1, 3),
+        ]);
+
+        assert_eq!(
+            build_category_stats(&stats_map),
+            vec![
+                ("片假名清音", 2, 3),
+                ("片假名浊音", 1, 2),
+                ("片假名半浊音", 3, 4),
+                ("片假名促音", 1, 1),
+                ("片假名拗音", 2, 2),
+                ("片假名拗音（浊/半浊）", 1, 3),
+            ]
+        );
+    }
+
+    #[test]
+    fn kana_chart_uses_katakana_tables_when_enabled() {
+        let output = render_kana_chart(QuizOptions {
+            include_katakana: true,
+            include_sokuon: false,
+            include_dakuten: true,
+            include_handakuten: false,
+            include_yoon: false,
+            include_all: false,
+        });
+
+        assert!(output.contains("片假名 ↔ 罗马音"));
+        assert!(output.contains("ア (a"));
+        assert!(output.contains("ガ (ga"));
+        assert!(!output.contains("あ (a"));
+        assert!(!output.contains("が (ga"));
     }
 }

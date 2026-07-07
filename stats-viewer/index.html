@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kotoba Keiko 統計</title>
+  <style>
+    :root {
+      --paper: #f6f3ec;
+      --ink: #1c2321;
+      --muted: #6c756f;
+      --line: #d9d0bf;
+      --panel: #fffaf0;
+      --green: #28735a;
+      --red: #b54535;
+      --gold: #c6942d;
+      --shadow: 0 18px 48px rgba(40, 32, 18, .12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      /*
+      background:
+        linear-gradient(90deg, rgba(28, 35, 33, .035) 1px, transparent 1px) 0 0 / 28px 28px,
+        linear-gradient(rgba(28, 35, 33, .03) 1px, transparent 1px) 0 0 / 28px 28px,
+        var(--paper);
+      */
+      background-color: var(--paper);
+      background-image:
+        radial-gradient(circle, rgba(198, 148, 45, .10) 1px, transparent 1.35px),
+        linear-gradient(90deg, rgba(28, 35, 33, .035) 1px, transparent 1px),
+        linear-gradient(rgba(28, 35, 33, .03) 1px, transparent 1px);
+      background-position: 14px 14px, 0 0, 0 0;
+      background-size: 56px 56px, 28px 28px, 28px 28px;
+      color: var(--ink);
+      font-family: ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", serif;
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 36px 0 44px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      border-bottom: 3px double var(--ink);
+      padding-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 7vw, 78px);
+      line-height: .9;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+
+    .stamp {
+      min-width: 240px;
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      transform: rotate(1deg);
+    }
+
+    .stamp span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .stamp strong {
+      display: block;
+      margin-top: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 14px;
+      word-break: break-word;
+    }
+
+    section { margin-top: 28px; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric,
+    .panel {
+      background: rgba(255, 250, 240, .88);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .metric {
+      padding: 16px;
+      min-height: 114px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .metric strong {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: clamp(26px, 4vw, 42px);
+      line-height: 1;
+    }
+
+    .panel {
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 14px;
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: baseline;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 10px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .timeline {
+      height: 220px;
+      display: grid;
+      grid-template-columns: repeat(var(--count), minmax(12px, 1fr));
+      align-items: end;
+      gap: 7px;
+      padding-top: 10px;
+    }
+
+    .bar {
+      position: relative;
+      min-height: 2px;
+      height: calc(var(--h) * 1%);
+      background: linear-gradient(to top, var(--red) 0 var(--wrong), var(--green) var(--wrong) 100%);
+      border: 1px solid rgba(28, 35, 33, .28);
+      transition: transform .15s ease;
+    }
+
+    .bar:hover { transform: translateY(-4px); }
+
+    .bar:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 3px;
+    }
+
+    .chart-detail {
+      min-height: 34px;
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      background: var(--ink);
+      color: var(--paper);
+      padding: 9px 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .wrong-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+      gap: 8px;
+    }
+
+    .kana-chip {
+      border: 1px solid var(--line);
+      background: #fffdf7;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .kana-chip b {
+      display: block;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .kana-chip span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+
+    .rank-list { display: grid; gap: 10px; }
+
+    .rank-row {
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr) 76px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .rank-kana {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .rank-kana small {
+      display: block;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      margin-top: 5px;
+    }
+
+    .track {
+      height: 12px;
+      background: #e9dfcf;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      width: calc(var(--pct) * 1%);
+      background: linear-gradient(90deg, var(--red), var(--gold));
+    }
+
+    .rate {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child,
+    th:nth-child(2),
+    td:nth-child(2) { text-align: left; }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .table-wrap { overflow-x: auto; }
+    .error { color: var(--red); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    @media (max-width: 900px) {
+      header,
+      .split { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stamp { min-width: 0; transform: none; }
+    }
+
+    @media (max-width: 560px) {
+      main { width: min(100vw - 20px, 1180px); padding-top: 22px; }
+      .metrics { grid-template-columns: 1fr; }
+      .timeline { gap: 4px; height: 180px; }
+      th, td { padding: 9px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Kotoba Keiko<br>統計</h1>
+        <p class="subtitle">Rust アプリと同じ DB パス規則で読み込むライブビュー。</p>
+      </div>
+      <div class="stamp">
+        <span>データベース規則</span>
+        <strong id="db-rule">$HOME/.keiko_stats.db</strong>
+      </div>
+    </header>
+
+    <section class="metrics" id="metrics"></section>
+
+    <section class="split">
+      <div class="panel">
+        <div class="panel-title">
+          <h2>練習の推移</h2>
+          <span class="hint">緑: 正解 / 赤: 不正解</span>
+        </div>
+        <div class="timeline" id="timeline"></div>
+        <div class="chart-detail" id="timeline-detail">棒にカーソルを合わせると詳細を表示します。</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">
+          <h2>直近の間違い</h2>
+          <span class="hint" id="latest-session"></span>
+        </div>
+        <div class="wrong-list" id="latest-wrong"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <h2>よく間違える仮名</h2>
+        <span class="hint">誤答数順</span>
+      </div>
+      <div class="rank-list" id="wrong-rank"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <h2>全セッション</h2>
+        <span class="hint">セッション集計</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>開始日時</th>
+              <th>問題数</th>
+              <th>正解</th>
+              <th>不正解</th>
+              <th>正答率</th>
+            </tr>
+          </thead>
+          <tbody id="session-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <h2>仮名別統計</h2>
+        <span class="hint">仮名ごとの集計</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>仮名</th>
+              <th>ローマ字</th>
+              <th>回答数</th>
+              <th>正解</th>
+              <th>不正解</th>
+              <th>正答率</th>
+            </tr>
+          </thead>
+          <tbody id="kana-table"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const chartDetailDefault = '棒にカーソルを合わせると詳細を表示します。';
+    const fmtPct = value => `${Number(value).toFixed(2)}%`;
+    const sum = (rows, key) => rows.reduce((total, row) => total + Number(row[key] || 0), 0);
+
+    async function loadStats() {
+      const response = await fetch('/api/stats', { cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || '統計の読み込みに失敗しました');
+      render(payload);
+    }
+
+    function render(data) {
+      const sessions = data.sessions;
+      const latest = sessions[sessions.length - 1];
+      const total = sum(sessions, 'total');
+      const correct = sum(sessions, 'correct');
+      const wrong = sum(sessions, 'incorrect');
+      const accuracy = total ? correct / total * 100 : 0;
+      const maxTotal = Math.max(1, ...sessions.map(row => row.total));
+
+      document.getElementById('db-rule').textContent = data.dbPathRule;
+      document.getElementById('metrics').innerHTML = [
+        ['練習回数', sessions.length],
+        ['総問題数', total],
+        ['正解', correct],
+        ['不正解', wrong],
+        ['正答率', fmtPct(accuracy)]
+      ].map(([label, value]) => `
+        <div class="metric">
+          <span>${label}</span>
+          <strong>${value}</strong>
+        </div>
+      `).join('');
+
+      const timeline = document.getElementById('timeline');
+      const timelineDetail = document.getElementById('timeline-detail');
+      let resetDetailTimer = null;
+      timeline.style.setProperty('--count', Math.max(1, sessions.length));
+      timeline.innerHTML = sessions.map(row => {
+        const height = Math.max(3, row.total / maxTotal * 100);
+        const wrongRatio = row.total ? row.incorrect / row.total * 100 : 0;
+        const acc = row.total ? row.correct / row.total * 100 : 0;
+        const detail = `#${row.id} ${row.started_at} / ${row.total}問 / 正答率 ${fmtPct(acc)}`;
+        return `<div class="bar" tabindex="0" style="--h:${height};--wrong:${wrongRatio}%;" aria-label="${detail}" data-detail="${detail}"></div>`;
+      }).join('');
+      timeline.querySelectorAll('.bar').forEach(bar => {
+        const showDetail = () => {
+          clearTimeout(resetDetailTimer);
+          resetDetailTimer = null;
+          timelineDetail.textContent = bar.dataset.detail;
+        };
+        const queueResetDetail = () => {
+          clearTimeout(resetDetailTimer);
+          resetDetailTimer = setTimeout(() => {
+            timelineDetail.textContent = chartDetailDefault;
+            resetDetailTimer = null;
+          }, 300);
+        };
+        bar.addEventListener('mouseenter', showDetail);
+        bar.addEventListener('mouseleave', queueResetDetail);
+        bar.addEventListener('focus', showDetail);
+        bar.addEventListener('blur', queueResetDetail);
+      });
+
+      document.getElementById('latest-session').textContent = latest ? `セッション #${latest.id}` : 'データなし';
+      document.getElementById('latest-wrong').innerHTML = data.latestWrong.length
+        ? data.latestWrong.map(row => `<div class="kana-chip"><b>${row.hira}</b><span>${row.roma}</span></div>`).join('')
+        : '<div class="hint">直近の回に間違いはありません</div>';
+
+      const wrongRows = data.kanaStats.filter(row => row.wrong > 0).slice(0, 12);
+      const maxWrong = Math.max(1, ...wrongRows.map(row => row.wrong));
+      document.getElementById('wrong-rank').innerHTML = wrongRows.length
+        ? wrongRows.map(row => `
+            <div class="rank-row">
+              <div class="rank-kana">${row.hira}<small>${row.roma}</small></div>
+              <div class="track"><div class="fill" style="--pct:${row.wrong / maxWrong * 100};"></div></div>
+              <div class="rate">${row.wrong} ミス</div>
+            </div>
+          `).join('')
+        : '<div class="hint">まだ間違いはありません</div>';
+
+      document.getElementById('session-table').innerHTML = sessions.map(row => {
+        const acc = row.total ? row.correct / row.total * 100 : 0;
+        return `
+          <tr>
+            <td>#${row.id}</td>
+            <td>${row.started_at}</td>
+            <td>${row.total}</td>
+            <td>${row.correct}</td>
+            <td>${row.incorrect}</td>
+            <td>${fmtPct(acc)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('kana-table').innerHTML = data.kanaStats.map(row => `
+        <tr>
+          <td>${row.hira}</td>
+          <td>${row.roma}</td>
+          <td>${row.attempts}</td>
+          <td>${row.correct}</td>
+          <td>${row.wrong}</td>
+          <td>${fmtPct(row.accuracy_pct)}</td>
+        </tr>
+      `).join('');
+    }
+
+    loadStats().catch(error => {
+      document.getElementById('metrics').innerHTML = `<div class="panel error">${error.message}</div>`;
+    });
+  </script>
+</body>
+</html>

@@ -5,7 +5,7 @@ use kotoba_keiko::{AppResult, QuizOptions, quiz, report, storage};
 #[command(
     name = "keiko",
     version,
-    about = "平假名与罗马音双向练习器（含 SQLite 统计）"
+    about = "假名与罗马音双向练习器（含 SQLite 统计）"
 )]
 struct Cli {
     #[command(flatten)]
@@ -23,6 +23,9 @@ struct CliQuizOptions {
     /// 在题库中加入促音
     #[arg(long = "sokuon", global = true)]
     include_sokuon: bool,
+    /// 使用片假名题库（默认使用平假名）
+    #[arg(long = "katakana", global = true)]
+    include_katakana: bool,
     /// 在题库中加入浊音
     #[arg(long = "dakuten", global = true)]
     include_dakuten: bool,
@@ -54,6 +57,7 @@ enum Commands {
 impl From<CliQuizOptions> for QuizOptions {
     fn from(value: CliQuizOptions) -> Self {
         Self {
+            include_katakana: value.include_katakana,
             include_sokuon: value.include_sokuon,
             include_dakuten: value.include_dakuten,
             include_handakuten: value.include_handakuten,
@@ -104,12 +108,49 @@ fn run() -> AppResult<()> {
 /// 这样可以把命令级别的约束留在 CLI 边界，
 /// 避免这类知识扩散进核心库内部。
 fn validate_quiz_options(command: &Commands, options: QuizOptions) -> AppResult<()> {
-    if options.has_extra_categories() && !matches!(command, Commands::Quiz | Commands::Review) {
+    if options.has_quiz_scope_options() && !matches!(command, Commands::Quiz | Commands::Review) {
         return Err(
-            "`--sokuon`、`--dakuten`、`--handakuten`、`--yoon`、`--all` 仅可与 `quiz` 或 `review` 一起使用"
+            "`--katakana`、`--sokuon`、`--dakuten`、`--handakuten`、`--yoon`、`--all` 仅可与 `quiz` 或 `review` 一起使用"
                 .to_string(),
         );
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    #[test]
+    fn katakana_option_can_be_used_after_quiz_subcommand() {
+        let cli = Cli::try_parse_from(["keiko", "quiz", "--katakana"]).unwrap();
+        let options = QuizOptions::from(cli.quiz_options);
+
+        assert!(matches!(cli.command, Some(Commands::Quiz)));
+        assert!(options.uses_katakana());
+    }
+
+    #[test]
+    fn katakana_option_can_be_combined_with_existing_review_flags() {
+        let cli = Cli::try_parse_from(["keiko", "review", "--katakana", "--dakuten"]).unwrap();
+        let options = QuizOptions::from(cli.quiz_options);
+
+        assert!(matches!(cli.command, Some(Commands::Review)));
+        assert!(options.uses_katakana());
+        assert!(options.includes_dakuten());
+    }
+
+    #[test]
+    fn katakana_option_is_rejected_for_non_quiz_commands() {
+        let options = QuizOptions {
+            include_katakana: true,
+            ..QuizOptions::default()
+        };
+
+        let err = validate_quiz_options(&Commands::Stats, options).unwrap_err();
+
+        assert!(err.contains("--katakana"));
+    }
 }

@@ -12,6 +12,7 @@ pub type AppResult<T> = Result<T, String>;
 /// 目的是让系统对“当前启用了哪些类别”只有一套解释。
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct QuizOptions {
+    pub include_katakana: bool,
     pub include_sokuon: bool,
     pub include_dakuten: bool,
     pub include_handakuten: bool,
@@ -23,6 +24,11 @@ impl QuizOptions {
     /// 返回是否应当纳入促音题目。
     pub fn includes_sokuon(self) -> bool {
         self.include_all || self.include_sokuon
+    }
+
+    /// 返回当前是否使用片假名题库。
+    pub fn uses_katakana(self) -> bool {
+        self.include_katakana
     }
 
     /// 返回是否应当纳入浊音题目。
@@ -51,6 +57,11 @@ impl QuizOptions {
             || self.includes_dakuten()
             || self.includes_handakuten()
             || self.includes_yoon()
+    }
+
+    /// 返回是否使用了只影响练习/对照表的范围选项。
+    pub fn has_quiz_scope_options(self) -> bool {
+        self.uses_katakana() || self.has_extra_categories()
     }
 }
 

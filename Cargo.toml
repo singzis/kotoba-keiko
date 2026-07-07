@@ -7,6 +7,10 @@ edition = "2024"
 name = "keiko"
 path = "src/main.rs"
 
+[[bin]]
+name = "stats-viewer"
+path = "stats-viewer/server.rs"
+
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 rand = "0.9"

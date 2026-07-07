@@ -21,7 +21,12 @@ enum Direction {
 /// 终端交互循环完全由这个函数接管，
 /// 上层只负责流程编排，不需要理解逐题记账细节。
 pub fn run_quiz(conn: &Connection, options: QuizOptions) -> AppResult<()> {
-    println!("开始练习：随机给出平假名或罗马音，请输入对应答案。");
+    let script_name = if options.uses_katakana() {
+        "片假名"
+    } else {
+        "平假名"
+    };
+    println!("开始练习：随机给出{script_name}或罗马音，请输入对应答案。");
     let feature_labels = selected_feature_labels(options);
     if !feature_labels.is_empty() {
         println!("已启用题型：{}", feature_labels.join("；"));

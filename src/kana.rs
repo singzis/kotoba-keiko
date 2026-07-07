@@ -193,6 +193,194 @@ pub const KANA_TABLE: &[KanaItem] = &[
     },
 ];
 
+/// 片假名模式使用的基础片假名表。
+pub const KATAKANA_TABLE: &[KanaItem] = &[
+    KanaItem {
+        hira: "ア",
+        roma: "a",
+    },
+    KanaItem {
+        hira: "イ",
+        roma: "i",
+    },
+    KanaItem {
+        hira: "ウ",
+        roma: "u",
+    },
+    KanaItem {
+        hira: "エ",
+        roma: "e",
+    },
+    KanaItem {
+        hira: "オ",
+        roma: "o",
+    },
+    KanaItem {
+        hira: "カ",
+        roma: "ka",
+    },
+    KanaItem {
+        hira: "キ",
+        roma: "ki",
+    },
+    KanaItem {
+        hira: "ク",
+        roma: "ku",
+    },
+    KanaItem {
+        hira: "ケ",
+        roma: "ke",
+    },
+    KanaItem {
+        hira: "コ",
+        roma: "ko",
+    },
+    KanaItem {
+        hira: "サ",
+        roma: "sa",
+    },
+    KanaItem {
+        hira: "シ",
+        roma: "shi",
+    },
+    KanaItem {
+        hira: "ス",
+        roma: "su",
+    },
+    KanaItem {
+        hira: "セ",
+        roma: "se",
+    },
+    KanaItem {
+        hira: "ソ",
+        roma: "so",
+    },
+    KanaItem {
+        hira: "タ",
+        roma: "ta",
+    },
+    KanaItem {
+        hira: "チ",
+        roma: "chi",
+    },
+    KanaItem {
+        hira: "ツ",
+        roma: "tsu",
+    },
+    KanaItem {
+        hira: "テ",
+        roma: "te",
+    },
+    KanaItem {
+        hira: "ト",
+        roma: "to",
+    },
+    KanaItem {
+        hira: "ナ",
+        roma: "na",
+    },
+    KanaItem {
+        hira: "ニ",
+        roma: "ni",
+    },
+    KanaItem {
+        hira: "ヌ",
+        roma: "nu",
+    },
+    KanaItem {
+        hira: "ネ",
+        roma: "ne",
+    },
+    KanaItem {
+        hira: "ノ",
+        roma: "no",
+    },
+    KanaItem {
+        hira: "ハ",
+        roma: "ha",
+    },
+    KanaItem {
+        hira: "ヒ",
+        roma: "hi",
+    },
+    KanaItem {
+        hira: "フ",
+        roma: "fu",
+    },
+    KanaItem {
+        hira: "ヘ",
+        roma: "he",
+    },
+    KanaItem {
+        hira: "ホ",
+        roma: "ho",
+    },
+    KanaItem {
+        hira: "マ",
+        roma: "ma",
+    },
+    KanaItem {
+        hira: "ミ",
+        roma: "mi",
+    },
+    KanaItem {
+        hira: "ム",
+        roma: "mu",
+    },
+    KanaItem {
+        hira: "メ",
+        roma: "me",
+    },
+    KanaItem {
+        hira: "モ",
+        roma: "mo",
+    },
+    KanaItem {
+        hira: "ヤ",
+        roma: "ya",
+    },
+    KanaItem {
+        hira: "ユ",
+        roma: "yu",
+    },
+    KanaItem {
+        hira: "ヨ",
+        roma: "yo",
+    },
+    KanaItem {
+        hira: "ラ",
+        roma: "ra",
+    },
+    KanaItem {
+        hira: "リ",
+        roma: "ri",
+    },
+    KanaItem {
+        hira: "ル",
+        roma: "ru",
+    },
+    KanaItem {
+        hira: "レ",
+        roma: "re",
+    },
+    KanaItem {
+        hira: "ロ",
+        roma: "ro",
+    },
+    KanaItem {
+        hira: "ワ",
+        roma: "wa",
+    },
+    KanaItem {
+        hira: "ヲ",
+        roma: "wo",
+    },
+    KanaItem {
+        hira: "ン",
+        roma: "n",
+    },
+];
+
 /// 浊音条目。
 pub const DAKUON_TABLE: &[KanaItem] = &[
     KanaItem {
@@ -277,6 +465,90 @@ pub const DAKUON_TABLE: &[KanaItem] = &[
     },
 ];
 
+/// 片假名浊音条目。
+pub const KATAKANA_DAKUON_TABLE: &[KanaItem] = &[
+    KanaItem {
+        hira: "ガ",
+        roma: "ga",
+    },
+    KanaItem {
+        hira: "ギ",
+        roma: "gi",
+    },
+    KanaItem {
+        hira: "グ",
+        roma: "gu",
+    },
+    KanaItem {
+        hira: "ゲ",
+        roma: "ge",
+    },
+    KanaItem {
+        hira: "ゴ",
+        roma: "go",
+    },
+    KanaItem {
+        hira: "ザ",
+        roma: "za",
+    },
+    KanaItem {
+        hira: "ジ",
+        roma: "ji",
+    },
+    KanaItem {
+        hira: "ズ",
+        roma: "zu",
+    },
+    KanaItem {
+        hira: "ゼ",
+        roma: "ze",
+    },
+    KanaItem {
+        hira: "ゾ",
+        roma: "zo",
+    },
+    KanaItem {
+        hira: "ダ",
+        roma: "da",
+    },
+    KanaItem {
+        hira: "ヂ",
+        roma: "di",
+    },
+    KanaItem {
+        hira: "ヅ",
+        roma: "du",
+    },
+    KanaItem {
+        hira: "デ",
+        roma: "de",
+    },
+    KanaItem {
+        hira: "ド",
+        roma: "do",
+    },
+    KanaItem {
+        hira: "バ",
+        roma: "ba",
+    },
+    KanaItem {
+        hira: "ビ",
+        roma: "bi",
+    },
+    KanaItem {
+        hira: "ブ",
+        roma: "bu",
+    },
+    KanaItem {
+        hira: "ベ",
+        roma: "be",
+    },
+    KanaItem {
+        hira: "ボ",
+        roma: "bo",
+    },
+];
+
 /// 半浊音条目。
 pub const HANDAKUON_TABLE: &[KanaItem] = &[
     KanaItem {
@@ -297,6 +569,30 @@ pub const HANDAKUON_TABLE: &[KanaItem] = &[
     },
     KanaItem {
         hira: "ぽ",
+        roma: "po",
+    },
+];
+
+/// 片假名半浊音条目。
+pub const KATAKANA_HANDAKUON_TABLE: &[KanaItem] = &[
+    KanaItem {
+        hira: "パ",
+        roma: "pa",
+    },
+    KanaItem {
+        hira: "ピ",
+        roma: "pi",
+    },
+    KanaItem {
+        hira: "プ",
+        roma: "pu",
+    },
+    KanaItem {
+        hira: "ペ",
+        roma: "pe",
+    },
+    KanaItem {
+        hira: "ポ",
         roma: "po",
     },
 ];
@@ -381,6 +677,90 @@ pub const SOKUON_TABLE: &[KanaItem] = &[
     },
     KanaItem {
         hira: "っぽ",
+        roma: "ppo",
+    },
+];
+
+/// 片假名促音组合。
+pub const KATAKANA_SOKUON_TABLE: &[KanaItem] = &[
+    KanaItem {
+        hira: "ッカ",
+        roma: "kka",
+    },
+    KanaItem {
+        hira: "ッキ",
+        roma: "kki",
+    },
+    KanaItem {
+        hira: "ック",
+        roma: "kku",
+    },
+    KanaItem {
+        hira: "ッケ",
+        roma: "kke",
+    },
+    KanaItem {
+        hira: "ッコ",
+        roma: "kko",
+    },
+    KanaItem {
+        hira: "ッサ",
+        roma: "ssa",
+    },
+    KanaItem {
+        hira: "ッシ",
+        roma: "sshi",
+    },
+    KanaItem {
+        hira: "ッス",
+        roma: "ssu",
+    },
+    KanaItem {
+        hira: "ッセ",
+        roma: "sse",
+    },
+    KanaItem {
+        hira: "ッソ",
+        roma: "sso",
+    },
+    KanaItem {
+        hira: "ッタ",
+        roma: "tta",
+    },
+    KanaItem {
+        hira: "ッチ",
+        roma: "cchi",
+    },
+    KanaItem {
+        hira: "ッツ",
+        roma: "ttsu",
+    },
+    KanaItem {
+        hira: "ッテ",
+        roma: "tte",
+    },
+    KanaItem {
+        hira: "ット",
+        roma: "tto",
+    },
+    KanaItem {
+        hira: "ッパ",
+        roma: "ppa",
+    },
+    KanaItem {
+        hira: "ッピ",
+        roma: "ppi",
+    },
+    KanaItem {
+        hira: "ップ",
+        roma: "ppu",
+    },
+    KanaItem {
+        hira: "ッペ",
+        roma: "ppe",
+    },
+    KanaItem {
+        hira: "ッポ",
         roma: "ppo",
     },
 ];
@@ -473,6 +853,94 @@ pub const YOON_TABLE: &[KanaItem] = &[
     },
 ];
 
+/// 片假名基础拗音组合。
+pub const KATAKANA_YOON_TABLE: &[KanaItem] = &[
+    KanaItem {
+        hira: "キャ",
+        roma: "kya",
+    },
+    KanaItem {
+        hira: "キュ",
+        roma: "kyu",
+    },
+    KanaItem {
+        hira: "キョ",
+        roma: "kyo",
+    },
+    KanaItem {
+        hira: "シャ",
+        roma: "sha",
+    },
+    KanaItem {
+        hira: "シュ",
+        roma: "shu",
+    },
+    KanaItem {
+        hira: "ショ",
+        roma: "sho",
+    },
+    KanaItem {
+        hira: "チャ",
+        roma: "cha",
+    },
+    KanaItem {
+        hira: "チュ",
+        roma: "chu",
+    },
+    KanaItem {
+        hira: "チョ",
+        roma: "cho",
+    },
+    KanaItem {
+        hira: "ニャ",
+        roma: "nya",
+    },
+    KanaItem {
+        hira: "ニュ",
+        roma: "nyu",
+    },
+    KanaItem {
+        hira: "ニョ",
+        roma: "nyo",
+    },
+    KanaItem {
+        hira: "ヒャ",
+        roma: "hya",
+    },
+    KanaItem {
+        hira: "ヒュ",
+        roma: "hyu",
+    },
+    KanaItem {
+        hira: "ヒョ",
+        roma: "hyo",
+    },
+    KanaItem {
+        hira: "ミャ",
+        roma: "mya",
+    },
+    KanaItem {
+        hira: "ミュ",
+        roma: "myu",
+    },
+    KanaItem {
+        hira: "ミョ",
+        roma: "myo",
+    },
+    KanaItem {
+        hira: "リャ",
+        roma: "rya",
+    },
+    KanaItem {
+        hira: "リュ",
+        roma: "ryu",
+    },
+    KanaItem {
+        hira: "リョ",
+        roma: "ryo",
+    },
+];
+
 /// 依赖浊音或半浊音开关的扩展拗音组合。
 pub const EXTENDED_YOON_TABLE: &[KanaItem] = &[
     KanaItem {
@@ -525,6 +993,58 @@ pub const EXTENDED_YOON_TABLE: &[KanaItem] = &[
     },
 ];
 
+/// 片假名扩展拗音组合。
+pub const KATAKANA_EXTENDED_YOON_TABLE: &[KanaItem] = &[
+    KanaItem {
+        hira: "ギャ",
+        roma: "gya",
+    },
+    KanaItem {
+        hira: "ギュ",
+        roma: "gyu",
+    },
+    KanaItem {
+        hira: "ギョ",
+        roma: "gyo",
+    },
+    KanaItem {
+        hira: "ジャ",
+        roma: "ja",
+    },
+    KanaItem {
+        hira: "ジュ",
+        roma: "ju",
+    },
+    KanaItem {
+        hira: "ジョ",
+        roma: "jo",
+    },
+    KanaItem {
+        hira: "ビャ",
+        roma: "bya",
+    },
+    KanaItem {
+        hira: "ビュ",
+        roma: "byu",
+    },
+    KanaItem {
+        hira: "ビョ",
+        roma: "byo",
+    },
+    KanaItem {
+        hira: "ピャ",
+        roma: "pya",
+    },
+    KanaItem {
+        hira: "ピュ",
+        roma: "pyu",
+    },
+    KanaItem {
+        hira: "ピョ",
+        roma: "pyo",
+    },
+];
+
 /// `stats` 与 `detail` 共用的统计类别定义。
 pub const KANA_CATEGORIES: &[KanaCategory] = &[
     KanaCategory {
@@ -551,6 +1071,30 @@ pub const KANA_CATEGORIES: &[KanaCategory] = &[
         name: "拗音（浊/半浊）",
         items: EXTENDED_YOON_TABLE,
     },
+    KanaCategory {
+        name: "片假名清音",
+        items: KATAKANA_TABLE,
+    },
+    KanaCategory {
+        name: "片假名浊音",
+        items: KATAKANA_DAKUON_TABLE,
+    },
+    KanaCategory {
+        name: "片假名半浊音",
+        items: KATAKANA_HANDAKUON_TABLE,
+    },
+    KanaCategory {
+        name: "片假名促音",
+        items: KATAKANA_SOKUON_TABLE,
+    },
+    KanaCategory {
+        name: "片假名拗音",
+        items: KATAKANA_YOON_TABLE,
+    },
+    KanaCategory {
+        name: "片假名拗音（浊/半浊）",
+        items: KATAKANA_EXTENDED_YOON_TABLE,
+    },
 ];
 
 /// 按固定布局把一维切片拆成连续分组。
@@ -574,27 +1118,75 @@ pub fn group_by_layout<'a, T>(items: &'a [T], layout: &[usize]) -> Vec<&'a [T]> 
     groups
 }
 
+pub fn base_table(options: QuizOptions) -> &'static [KanaItem] {
+    if options.uses_katakana() {
+        KATAKANA_TABLE
+    } else {
+        KANA_TABLE
+    }
+}
+
+pub fn dakuten_table(options: QuizOptions) -> &'static [KanaItem] {
+    if options.uses_katakana() {
+        KATAKANA_DAKUON_TABLE
+    } else {
+        DAKUON_TABLE
+    }
+}
+
+pub fn handakuten_table(options: QuizOptions) -> &'static [KanaItem] {
+    if options.uses_katakana() {
+        KATAKANA_HANDAKUON_TABLE
+    } else {
+        HANDAKUON_TABLE
+    }
+}
+
+pub fn sokuon_table(options: QuizOptions) -> &'static [KanaItem] {
+    if options.uses_katakana() {
+        KATAKANA_SOKUON_TABLE
+    } else {
+        SOKUON_TABLE
+    }
+}
+
+pub fn yoon_table(options: QuizOptions) -> &'static [KanaItem] {
+    if options.uses_katakana() {
+        KATAKANA_YOON_TABLE
+    } else {
+        YOON_TABLE
+    }
+}
+
+pub fn extended_yoon_table(options: QuizOptions) -> &'static [KanaItem] {
+    if options.uses_katakana() {
+        KATAKANA_EXTENDED_YOON_TABLE
+    } else {
+        EXTENDED_YOON_TABLE
+    }
+}
+
 /// 根据练习选项构造最终题池。
 ///
 /// 这里刻意把接口做窄：调用方只关心“我要一个完整题池”，
 /// 不需要知道底层到底拼接了哪些子表。
 pub fn build_quiz_pool(options: QuizOptions) -> Vec<&'static KanaItem> {
-    let mut pool: Vec<&KanaItem> = KANA_TABLE.iter().collect();
+    let mut pool: Vec<&KanaItem> = base_table(options).iter().collect();
 
     if options.includes_dakuten() {
-        pool.extend(DAKUON_TABLE.iter());
+        pool.extend(dakuten_table(options).iter());
     }
     if options.includes_handakuten() {
-        pool.extend(HANDAKUON_TABLE.iter());
+        pool.extend(handakuten_table(options).iter());
     }
     if options.includes_sokuon() {
-        pool.extend(SOKUON_TABLE.iter());
+        pool.extend(sokuon_table(options).iter());
     }
     if options.includes_yoon() {
-        pool.extend(YOON_TABLE.iter());
+        pool.extend(yoon_table(options).iter());
     }
     if options.includes_extended_yoon() {
-        pool.extend(EXTENDED_YOON_TABLE.iter());
+        pool.extend(extended_yoon_table(options).iter());
     }
 
     pool
@@ -604,6 +1196,9 @@ pub fn build_quiz_pool(options: QuizOptions) -> Vec<&'static KanaItem> {
 pub fn selected_feature_labels(options: QuizOptions) -> Vec<&'static str> {
     let mut labels = Vec::new();
 
+    if options.uses_katakana() {
+        labels.push("片假名");
+    }
     if options.includes_sokuon() {
         labels.push("促音");
     }
@@ -648,6 +1243,7 @@ mod tests {
     #[test]
     fn split_flags_add_requested_groups() {
         let pool = build_quiz_pool(QuizOptions {
+            include_katakana: false,
             include_sokuon: true,
             include_dakuten: true,
             include_handakuten: true,
@@ -665,6 +1261,7 @@ mod tests {
     #[test]
     fn yoon_pool_adds_base_yoon_only() {
         let pool = build_quiz_pool(QuizOptions {
+            include_katakana: false,
             include_sokuon: false,
             include_dakuten: false,
             include_handakuten: false,
@@ -681,6 +1278,7 @@ mod tests {
     #[test]
     fn combined_pool_adds_extended_yoon_too() {
         let pool = build_quiz_pool(QuizOptions {
+            include_katakana: false,
             include_sokuon: true,
             include_dakuten: true,
             include_handakuten: true,
@@ -698,6 +1296,7 @@ mod tests {
     #[test]
     fn all_flag_enables_everything() {
         let pool = build_quiz_pool(QuizOptions {
+            include_katakana: false,
             include_sokuon: false,
             include_dakuten: false,
             include_handakuten: false,
@@ -710,5 +1309,54 @@ mod tests {
         assert!(contains_item(&pool, "ぽ", "po"));
         assert!(contains_item(&pool, "きゅ", "kyu"));
         assert!(contains_item(&pool, "びょ", "byo"));
+    }
+
+    #[test]
+    fn katakana_flag_switches_base_pool_to_katakana() {
+        let pool = build_quiz_pool(QuizOptions {
+            include_katakana: true,
+            include_sokuon: false,
+            include_dakuten: false,
+            include_handakuten: false,
+            include_yoon: false,
+            include_all: false,
+        });
+
+        assert_eq!(pool.len(), 46);
+        assert!(contains_item(&pool, "ア", "a"));
+        assert!(contains_item(&pool, "ン", "n"));
+        assert!(!contains_item(&pool, "あ", "a"));
+    }
+
+    #[test]
+    fn katakana_flag_applies_existing_extra_category_flags() {
+        let pool = build_quiz_pool(QuizOptions {
+            include_katakana: true,
+            include_sokuon: false,
+            include_dakuten: true,
+            include_handakuten: false,
+            include_yoon: true,
+            include_all: false,
+        });
+
+        assert!(contains_item(&pool, "ガ", "ga"));
+        assert!(contains_item(&pool, "キャ", "kya"));
+        assert!(contains_item(&pool, "ギャ", "gya"));
+        assert!(!contains_item(&pool, "が", "ga"));
+        assert!(!contains_item(&pool, "きゃ", "kya"));
+    }
+
+    #[test]
+    fn katakana_flag_is_included_in_feature_labels() {
+        let labels = selected_feature_labels(QuizOptions {
+            include_katakana: true,
+            include_sokuon: false,
+            include_dakuten: true,
+            include_handakuten: false,
+            include_yoon: false,
+            include_all: false,
+        });
+
+        assert_eq!(labels, vec!["片假名", "浊音"]);
     }
 }
