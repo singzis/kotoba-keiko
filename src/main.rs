@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use kotoba_keiko::{AppResult, QuizOptions, quiz, report, storage};
+use kotoba_keiko::{AppResult, PromptMode, QuizOptions, quiz, report, storage};
 
 #[derive(Parser)]
 #[command(
@@ -38,6 +38,12 @@ struct CliQuizOptions {
     /// 一次性加入促音、浊音、半浊音、拗音
     #[arg(long = "all", global = true)]
     include_all: bool,
+    /// 只显示罗马音题面，要求输入假名
+    #[arg(long = "romaji-only", global = true, conflicts_with = "kana_only")]
+    romaji_only: bool,
+    /// 只显示假名题面，要求输入罗马音
+    #[arg(long = "kana-only", global = true, conflicts_with = "romaji_only")]
+    kana_only: bool,
 }
 
 #[derive(Subcommand)]
@@ -52,6 +58,18 @@ enum Commands {
     Reset,
     /// 查看每个字的正确率详情
     Detail,
+}
+
+impl CliQuizOptions {
+    fn prompt_mode(self) -> PromptMode {
+        if self.romaji_only {
+            PromptMode::RomajiOnly
+        } else if self.kana_only {
+            PromptMode::KanaOnly
+        } else {
+            PromptMode::Random
+        }
+    }
 }
 
 impl From<CliQuizOptions> for QuizOptions {
@@ -77,13 +95,14 @@ fn main() {
 fn run() -> AppResult<()> {
     let cli = Cli::parse();
     let command = cli.command.unwrap_or(Commands::Quiz);
+    let prompt_mode = cli.quiz_options.prompt_mode();
     let options = QuizOptions::from(cli.quiz_options);
-    validate_quiz_options(&command, options)?;
+    validate_quiz_options(&command, options, prompt_mode)?;
 
     match command {
         Commands::Quiz => {
             let conn = storage::open_db()?;
-            quiz::run_quiz(&conn, options)
+            quiz::run_quiz(&conn, options, prompt_mode)
         }
         Commands::Stats => {
             let conn = storage::open_db()?;
@@ -107,12 +126,20 @@ fn run() -> AppResult<()> {
 ///
 /// 这样可以把命令级别的约束留在 CLI 边界，
 /// 避免这类知识扩散进核心库内部。
-fn validate_quiz_options(command: &Commands, options: QuizOptions) -> AppResult<()> {
+fn validate_quiz_options(
+    command: &Commands,
+    options: QuizOptions,
+    prompt_mode: PromptMode,
+) -> AppResult<()> {
     if options.has_quiz_scope_options() && !matches!(command, Commands::Quiz | Commands::Review) {
         return Err(
             "`--katakana`、`--sokuon`、`--dakuten`、`--handakuten`、`--yoon`、`--all` 仅可与 `quiz` 或 `review` 一起使用"
                 .to_string(),
         );
+    }
+
+    if prompt_mode != PromptMode::Random && !matches!(command, Commands::Quiz) {
+        return Err("`--romaji-only`、`--kana-only` 仅可与 `quiz` 一起使用".to_string());
     }
 
     Ok(())
@@ -149,8 +176,48 @@ mod tests {
             ..QuizOptions::default()
         };
 
-        let err = validate_quiz_options(&Commands::Stats, options).unwrap_err();
+        let err = validate_quiz_options(&Commands::Stats, options, PromptMode::Random).unwrap_err();
 
         assert!(err.contains("--katakana"));
+    }
+
+    #[test]
+    fn prompt_mode_defaults_to_random() {
+        let cli = Cli::try_parse_from(["keiko", "quiz"]).unwrap();
+
+        assert_eq!(cli.quiz_options.prompt_mode(), PromptMode::Random);
+    }
+
+    #[test]
+    fn romaji_only_option_selects_romaji_prompts() {
+        let cli = Cli::try_parse_from(["keiko", "quiz", "--romaji-only"]).unwrap();
+
+        assert_eq!(cli.quiz_options.prompt_mode(), PromptMode::RomajiOnly);
+    }
+
+    #[test]
+    fn kana_only_option_selects_kana_prompts() {
+        let cli = Cli::try_parse_from(["keiko", "--kana-only"]).unwrap();
+
+        assert_eq!(cli.quiz_options.prompt_mode(), PromptMode::KanaOnly);
+    }
+
+    #[test]
+    fn prompt_mode_options_are_mutually_exclusive() {
+        let result = Cli::try_parse_from(["keiko", "quiz", "--romaji-only", "--kana-only"]);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn prompt_mode_options_are_rejected_for_non_quiz_commands() {
+        let err = validate_quiz_options(
+            &Commands::Review,
+            QuizOptions::default(),
+            PromptMode::RomajiOnly,
+        )
+        .unwrap_err();
+
+        assert!(err.contains("--romaji-only"));
     }
 }

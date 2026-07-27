@@ -28,6 +28,8 @@ cargo run -- quiz --all
 cargo run -- quiz --dakuten --yoon
 cargo run -- quiz --katakana
 cargo run -- quiz --katakana --dakuten
+cargo run -- quiz --romaji-only
+cargo run -- quiz --kana-only
 ```
 
 `PATH` にインストールすれば、`keiko` を直接実行できます。
@@ -60,10 +62,12 @@ cargo install --path . --bin keiko --force
 - `--handakuten`：`quiz` / `review` に**半濁音**を追加します
 - `--yoon`：`quiz` / `review` に**拗音**を追加します
 - `--all`：**促音・濁音・半濁音・拗音**をまとめて追加します
-- これらのオプションは組み合わせて使用できます。たとえば `--dakuten --yoon` を指定すると濁音と拗音に加えて濁拗音も対象になります。`--katakana --dakuten` はカタカナ濁音を対象にします。`--all` はすべて有効にするのと同じです。
+- `--romaji-only`：**ローマ字**だけを問題として表示し、対応するかなを入力します
+- `--kana-only`：**かな**だけを問題として表示し、対応するローマ字を入力します
+- `--romaji-only` と `--kana-only` は同時に指定できません。どちらも指定しない場合は、問題ごとにかなまたはローマ字がランダムに表示されます
+- 問題プールのオプションは組み合わせて使用できます。たとえば `--dakuten --yoon` を指定すると濁音と拗音に加えて濁拗音も対象になります。`--katakana --dakuten` はカタカナ濁音を対象にします。`--all` はすべて有効にするのと同じです。
 
-練習中に `q`、`quit`、`exit` のいずれかを入力すると、そのラウンドを終了します。  
-回答が 1 問以上ある場合のみ、結果がデータベースに保存されます。
+練習中に Ctrl-C を押すと `Press Ctrl-C again to exit` と表示されます。約 1.5 秒以内にもう一度 Ctrl-C を押すと終了します。
 
 ## データ保存
 

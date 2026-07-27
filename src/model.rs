@@ -6,6 +6,18 @@ use std::collections::HashMap;
 /// 来收敛错误信息，避免把存储层或解析层的细节暴露给上层调用方。
 pub type AppResult<T> = Result<T, String>;
 
+/// 控制练习时题面显示哪种文字。
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum PromptMode {
+    /// 每道题随机显示假名或罗马音。
+    #[default]
+    Random,
+    /// 只显示假名，要求输入罗马音。
+    KanaOnly,
+    /// 只显示罗马音，要求输入假名。
+    RomajiOnly,
+}
+
 /// 控制题库范围的特性开关。
 ///
 /// 这一组配置会同时被练习、对照表和统计视图复用，

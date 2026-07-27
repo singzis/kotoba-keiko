@@ -26,6 +26,8 @@ cargo run -- quiz --all
 cargo run -- quiz --dakuten --yoon
 cargo run -- quiz --katakana
 cargo run -- quiz --katakana --dakuten
+cargo run -- quiz --romaji-only
+cargo run -- quiz --kana-only
 ```
 
 ## 可视化预览
@@ -36,18 +38,16 @@ cargo run --bin stats-viewer
 
 启动后打开 `http://127.0.0.1:7878`。页面会动态读取与 CLI 相同位置的 `$HOME/.keiko_stats.db`。
 
-安装到本机 `PATH` 后可直接敲 `keiko`：
+## 本地安装（懒人版）
 
-```bash
-cargo install --path . --bin keiko
-keiko quiz
-```
-
-注意：`cargo run` 会使用当前源码；终端里的 `keiko` 是已安装的独立二进制。源码更新后若要让 `keiko` 命令使用新逻辑，需要重新安装：
+在当前项目根目录复制执行下面两行，即可安装或覆盖旧版本并直接启动：
 
 ```bash
 cargo install --path . --bin keiko --force
+keiko
 ```
+
+安装后，终端中的 `keiko` 是独立二进制；源码更新后，再执行一次上述命令即可同步最新版本。
 
 ## 子命令
 
@@ -67,10 +67,13 @@ cargo install --path . --bin keiko --force
 - `--handakuten`：在 `quiz` / `review` 中加入**半浊音**。
 - `--yoon`：在 `quiz` / `review` 中加入**拗音**。
 - `--all`：一次性加入**促音、浊音、半浊音、拗音**。
-- 这些参数都可组合使用；例如 `--dakuten --yoon` 会加入浊音与拗音，并额外包含浊拗音；`--katakana --dakuten` 会练习片假名浊音；`--all` 则等价于全部开启。
+- `--romaji-only`：只显示**罗马音**题面，要求输入对应假名。
+- `--kana-only`：只显示**假名**题面，要求输入对应罗马音。
+- `--romaji-only` 与 `--kana-only` 不能同时使用；二者都不指定时，每道题默认随机显示假名或罗马音。
+- 题库参数可组合使用；例如 `--dakuten --yoon` 会加入浊音与拗音，并额外包含浊拗音；`--katakana --dakuten` 会练习片假名浊音；`--all` 则等价于全部开启。
 
 
-退出练习：输入 `**q`**、`**quit**` 或 `**exit**` 后结束本轮；若本轮有作答，会写入数据库。
+退出练习：按下 Ctrl-C 后会显示 `Press Ctrl-C again to exit`；在约 1.5 秒内再次按下 Ctrl-C 即可退出。
 
 ## 数据存储
 

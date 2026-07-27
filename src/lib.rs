@@ -10,4 +10,4 @@ pub mod quiz;
 pub mod report;
 pub mod storage;
 
-pub use model::{AppResult, QuizOptions};
+pub use model::{AppResult, PromptMode, QuizOptions};
